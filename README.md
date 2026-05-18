@@ -101,3 +101,11 @@ The GitHub Actions workflow is stored in `.github/workflows/ci.yml`. When code i
 The testing guide is stored in `TESTING.md`, and the actual test code is stored in `tests/test_app.py`.
 
 The app is prepared for public deployment. After deployment is completed, the public website screenshot will be saved in the `Task2/screenshots` folder.
+
+## Public Deployment
+
+The Flask API and website have been publicly deployed at:
+
+https://HaotianFang123.pythonanywhere.com
+
+This public deployment is used as the website deployment evidence for Task 2.
