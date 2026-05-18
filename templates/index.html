@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>AI Gym Management Platform</title>
+  <style>
+    :root{
+      --bg: #08111f;
+      --header: #0f172a;
+      --hero: #101827;
+      --features: #0b2535;
+      --classes: #102a24;
+      --trainers: #172033;
+      --booking: #1e1b35;
+      --enquiries: #132b32;
+      --dashboard: #2a1f2d;
+
+      --card: rgba(255,255,255,0.04);
+      --card2: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.10);
+      --muted: rgba(255,255,255,0.74);
+      --text: rgba(255,255,255,0.92);
+      --title: rgba(255,255,255,0.96);
+
+      --accent: #58d6ff;
+      --accent2: #a78bfa;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+
+      --radius: 24px;
+      --shadow: 0 12px 30px rgba(0,0,0,0.30);
+    }
+
+    html { scroll-behavior: smooth; }
+    * { box-sizing: border-box; }
+
+    body{
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    a{ color: inherit; text-decoration: none; }
+
+    .skip-link{
+      position:absolute;
+      left:-999px;
+      top:auto;
+      width:1px;height:1px;overflow:hidden;
+    }
+    .skip-link:focus{
+      position: fixed;
+      left: 16px;
+      top: 16px;
+      width:auto;height:auto;
+      padding: 10px 12px;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      z-index: 9999;
+    }
+
+    header{
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(15,23,42,0.86);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .nav{
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 220px;
+    }
+    .logo{
+      width: 34px; height: 34px;
+      border-radius: 12px;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(88,214,255,0.95), rgba(88,214,255,0.12) 55%),
+        radial-gradient(circle at 65% 65%, rgba(167,139,250,0.95), rgba(167,139,250,0.08) 55%),
+        rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.28);
+      flex: 0 0 auto;
+    }
+    .brand-name{
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      color: var(--title);
+      font-size: 14px;
+      line-height: 1.1;
+    }
+    .brand-sub{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    nav ul{
+      list-style: none;
+      display: flex;
+      gap: 6px;
+      padding: 0;
+      margin: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a.link{
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      color: rgba(255,255,255,0.86);
+      font-size: 13px;
+      transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+      white-space: nowrap;
+    }
+    .nav a.link:hover{
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.95);
+    }
+
+    main{
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 18px 20px 88px;
+      display: grid;
+      gap: 18px;
+    }
+
+    section{
+      padding: 56px 32px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .section-head{
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .section-head h2{
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.2px;
+      color: var(--title);
+    }
+    .section-head p{
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    #hero{ background: var(--hero); }
+    #features{ background: var(--features); }
+    #classes{ background: var(--classes); }
+    #trainers{ background: var(--trainers); }
+    #booking{ background: var(--booking); }
+    #enquiries{ background: var(--enquiries); }
+    #dashboard{ background: var(--dashboard); }
+
+    .hero-wrap{
+      display: grid;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .hero-image{
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius: 24px;
+      display: block;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.22);
+      box-shadow: 0 16px 44px rgba(0,0,0,0.34);
+    }
+
+    .hero-cta{
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.92);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 120ms ease, background 160ms ease, border-color 160ms ease;
+      user-select: none;
+    }
+    .btn:hover{
+      background: rgba(255,255,255,0.10);
+      border-color: rgba(255,255,255,0.16);
+      transform: translateY(-1px);
+    }
+    .btn.primary{
+      background: rgba(88,214,255,0.14);
+      border-color: rgba(88,214,255,0.30);
+      color: rgba(232,251,255,0.98);
+    }
+    .btn.primary:hover{
+      background: rgba(88,214,255,0.18);
+      border-color: rgba(88,214,255,0.40);
+    }
+    .btn.secondary{
+      background: rgba(167,139,250,0.12);
+      border-color: rgba(167,139,250,0.26);
+      color: rgba(248,245,255,0.98);
+    }
+    .btn.secondary:hover{
+      background: rgba(167,139,250,0.16);
+      border-color: rgba(167,139,250,0.36);
+    }
+
+    .grid{
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+    }
+
+    .card{
+      grid-column: span 4;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.20);
+      min-height: 96px;
+    }
+    .card h3{
+      margin: 0 0 6px;
+      color: rgba(255,255,255,0.95);
+      font-size: 14px;
+      letter-spacing: 0.2px;
+    }
+    .card p{
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .meta{
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.84);
+    }
+
+    .list-wrap{
+      display: grid;
+      gap: 14px;
+    }
+
+    .state{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.18);
+      color: rgba(255,255,255,0.88);
+      font-size: 13px;
+    }
+    .state small{ color: var(--muted); }
+    .spinner{
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.18);
+      border-top-color: rgba(255,255,255,0.70);
+      animation: spin 900ms linear infinite;
+      flex: 0 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .form-card{
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 14px 30px rgba(0,0,0,0.22);
+      max-width: 760px;
+    }
+
+    .form-grid{
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    label{
+      display:block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.84);
+    }
+    .field{
+      grid-column: span 6;
+    }
+    .field.full{ grid-column: 1 / -1; }
+
+    input, select, textarea{
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(3,6,14,0.40);
+      color: rgba(255,255,255,0.92);
+      outline: none;
+      transition: border-color 160ms ease, background 160ms ease;
+      font-size: 14px;
+    }
+    input::placeholder, textarea::placeholder{ color: rgba(255,255,255,0.42); }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(88,214,255,0.42);
+      background: rgba(3,6,14,0.54);
+    }
+    textarea{ min-height: 110px; resize: vertical; }
+
+    .consent{
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.14);
+    }
+    .consent input{
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      accent-color: var(--accent);
+    }
+    .consent p{
+      margin: 0;
+      color: rgba(255,255,255,0.78);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .form-actions{
+      margin-top: 12px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap: wrap;
+    }
+
+    .msg{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.16);
+      color: rgba(255,255,255,0.86);
+      font-size: 13px;
+      display: none;
+    }
+    .msg.show{ display:block; }
+    .msg.ok{
+      border-color: rgba(34,197,94,0.35);
+      background: rgba(34,197,94,0.10);
+    }
+    .msg.err{
+      border-color: rgba(239,68,68,0.38);
+      background: rgba(239,68,68,0.10);
+    }
+
+    .compact{
+      max-width: 980px;
+    }
+
+    .table-like{
+      display:grid;
+      gap: 10px;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 1.2fr 1fr 0.9fr 0.7fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+    }
+    .row .main{
+      display:flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .row strong{
+      font-size: 13px;
+      color: rgba(255,255,255,0.95);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .row span{
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .status{
+      justify-self: start;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.14);
+      font-size: 12px;
+      color: rgba(255,255,255,0.86);
+      text-transform: capitalize;
+    }
+    .status.new{ border-color: rgba(88,214,255,0.30); background: rgba(88,214,255,0.10); }
+    .status.confirmed{ border-color: rgba(34,197,94,0.34); background: rgba(34,197,94,0.10); }
+    .status["in progress"]{ border-color: rgba(245,158,11,0.34); background: rgba(245,158,11,0.10); }
+    .status.inprogress{ border-color: rgba(245,158,11,0.34); background: rgba(245,158,11,0.10); }
+    .status.closed{ border-color: rgba(148,163,184,0.30); background: rgba(148,163,184,0.10); }
+
+    footer{
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 20px 34px;
+      color: rgba(255,255,255,0.58);
+      font-size: 12px;
+    }
+
+    @media (max-width: 900px){
+      section{ padding: 44px 20px; }
+      .card{ grid-column: span 12; }
+      .field{ grid-column: span 12; }
+      .row{
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#hero">Skip to content</a>
+
+  <header>
+    <div class="nav">
+      <div class="brand" aria-label="Site name">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="brand-name">AI Gym Management Platform</div>
+          <div class="brand-sub">Classes, trainers, and requests in one place</div>
+        </div>
+      </div>
+
+      <nav aria-label="Primary">
+        <ul>
+          <li><a class="link" href="#classes">Classes</a></li>
+          <li><a class="link" href="#trainers">Trainers</a></li>
+          <li><a class="link" href="#booking">Book a Class</a></li>
+          <li><a class="link" href="#enquiries">Enquiries</a></li>
+          <li><a class="link" href="#dashboard">Staff Dashboard</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- 2. Hero -->
+    <section id="hero" aria-label="Hero">
+      <div class="hero-wrap">
+        <img class="hero-image" src="/static/gym_hero.png" alt="AI Gym Management Platform hero banner" />
+        <div class="hero-cta" aria-label="Hero calls to action">
+          <a class="btn primary" href="#classes">Browse Classes</a>
+          <a class="btn secondary" href="#booking">Book a Class</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Features -->
+    <section id="features" aria-label="Quick features">
+      <div class="section-head">
+        <div>
+          <h2>Built for members, trainers, and staff</h2>
+          <p>Clear schedules, reliable requests, and streamlined follow-up.</p>
+        </div>
+      </div>
+
+      <div class="grid" role="list">
+        <div class="card" role="listitem">
+          <h3>Class Booking</h3>
+          <p>Members can browse classes and submit online booking requests.</p>
+        </div>
+        <div class="card" role="listitem">
+          <h3>Trainer Profiles</h3>
+          <p>Members can view trainer information, specialties, and availability.</p>
+        </div>
+        <div class="card" role="listitem">
+          <h3>Staff Follow-up</h3>
+          <p>Gym staff can review bookings and enquiries in one place.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Classes -->
+    <section id="classes" aria-label="Fitness classes">
+      <div class="section-head">
+        <div>
+          <h2>Fitness Classes</h2>
+          <p>Browse upcoming sessions and pick the right fit.</p>
+        </div>
+        <div class="hero-cta" style="justify-content:flex-end;">
+          <a class="btn primary" href="#booking">Book a Class</a>
+        </div>
+      </div>
+
+      <div id="classesState" class="state" aria-live="polite">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="spinner" aria-hidden="true"></div>
+          <div>
+            <div style="font-weight:600;">Loading classes…</div>
+            <small>Fetching the latest schedule.</small>
+          </div>
+        </div>
+      </div>
+
+      <div id="classesGrid" class="grid" role="list" style="margin-top:14px;"></div>
+    </section>
+
+    <!-- 5. Trainers -->
+    <section id="trainers" aria-label="Trainers">
+      <div class="section-head">
+        <div>
+          <h2>Trainers</h2>
+          <p>Meet the team and explore specialties.</p>
+        </div>
+      </div>
+
+      <div id="trainersState" class="state" aria-live="polite">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="spinner" aria-hidden="true"></div>
+          <div>
+            <div style="font-weight:600;">Loading trainers…</div>
+            <small>Profiles and availability.</small>
+          </div>
+        </div>
+      </div>
+
+      <div id="trainersGrid" class="grid" role="list" style="margin-top:14px;"></div>
+    </section>
+
+    <!-- 6. Booking -->
+    <section id="booking" aria-label="Book a class">
+      <div class="section-head">
+        <div>
+          <h2>Book a Class</h2>
+          <p>Send a booking request. Staff will confirm details and follow up.</p>
+        </div>
+      </div>
+
+      <div class="form-card" role="region" aria-label="Booking request form">
+        <form id="bookingForm" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="member_name">Member name</label>
+              <input id="member_name" name="member_name" type="text" placeholder="Your name" autocomplete="name" required />
+            </div>
+            <div class="field">
+              <label for="booking_email">Email</label>
+              <input id="booking_email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </div>
+
+            <div class="field">
+              <label for="class_id">Class</label>
+              <select id="class_id" name="class_id" required>
+                <option value="">Loading class options…</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="booking_notes">Notes (optional)</label>
+              <input id="booking_notes" name="notes" type="text" placeholder="E.g., first time, injury considerations, preferred time" />
+            </div>
+
+            <div class="field full">
+              <div class="consent">
+                <input id="booking_consent" type="checkbox" required />
+                <p>
+                  I consent to being contacted by the gym about this booking request and understand my request will be stored for follow-up.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn primary" type="submit" id="bookingSubmit">Submit booking request</button>
+            <a class="btn" href="#classes">Back to classes</a>
+          </div>
+
+          <div id="bookingMsg" class="msg" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 7. Enquiries -->
+    <section id="enquiries" aria-label="Member enquiries">
+      <div class="section-head">
+        <div>
+          <h2>Enquiries</h2>
+          <p>Questions about schedules, trainers, or getting started? Send a message.</p>
+        </div>
+      </div>
+
+      <div class="form-card" role="region" aria-label="Enquiry form">
+        <form id="enquiryForm" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="enq_name">Name</label>
+              <input id="enq_name" name="name" type="text" placeholder="Your name" autocomplete="name" required />
+            </div>
+            <div class="field">
+              <label for="enq_email">Email</label>
+              <input id="enq_email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </div>
+
+            <div class="field full">
+              <label for="enq_subject">Subject</label>
+              <input id="enq_subject" name="subject" type="text" placeholder="What can we help with?" required />
+            </div>
+            <div class="field full">
+              <label for="enq_message">Message</label>
+              <textarea id="enq_message" name="message" placeholder="Share details so we can respond quickly." required></textarea>
+            </div>
+
+            <div class="field full">
+              <div class="consent">
+                <input id="enq_consent" type="checkbox" required />
+                <p>
+                  I consent to being contacted by the gym about this enquiry and understand my message will be stored for follow-up.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn primary" type="submit" id="enqSubmit">Send enquiry</button>
+            <a class="btn" href="#classes">Browse classes</a>
+          </div>
+
+          <div id="enqMsg" class="msg" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 8. Dashboard -->
+    <section id="dashboard" aria-label="Staff dashboard">
+      <div class="section-head">
+        <div>
+          <h2>Staff Dashboard</h2>
+          <p>Compact view of recent booking requests and their statuses.</p>
+        </div>
+        <div class="hero-cta" style="justify-content:flex-end;">
+          <button class="btn" type="button" id="refreshBookings">Refresh</button>
+        </div>
+      </div>
+
+      <div class="compact">
+        <div id="bookingsState" class="state" aria-live="polite">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="spinner" aria-hidden="true"></div>
+            <div>
+              <div style="font-weight:600;">Loading booking requests…</div>
+              <small>Latest requests and status updates.</small>
+            </div>
+          </div>
+        </div>
+
+        <div id="bookingsTable" class="table-like" style="margin-top:14px;"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:16px;">
+      © <span id="year"></span> AI Gym Management Platform. Public catalog + internal workflow dashboard.
+    </div>
+  </footer>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+
+    function escapeHtml(value){
+      const s = String(value ?? "");
+      return s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function setState(el, {loading, title, subtitle, type}){
+      if (!el) return;
+      const spinner = loading ? '<div class="spinner" aria-hidden="true"></div>' : '';
+      const border = type === 'error'
+        ? 'border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08);'
+        : type === 'ok'
+          ? 'border-color: rgba(34,197,94,0.30); background: rgba(34,197,94,0.08);'
+          : '';
+      el.style.cssText = border;
+      el.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px;">
+          ${spinner}
+          <div>
+            <div style="font-weight:600;">${escapeHtml(title || '')}</div>
+            ${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ''}
+          </div>
+        </div>
+      `;
+      el.hidden = false;
+    }
+
+    function showMsg(el, type, text){
+      el.className = 'msg show ' + (type === 'ok' ? 'ok' : (type === 'err' ? 'err' : ''));
+      el.textContent = text;
+    }
+
+    function normalizeClassesPayload(payload){
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload.classes)) return payload.classes;
+      if (payload && Array.isArray(payload.data)) return payload.data;
+      return [];
+    }
+
+    function normalizeTrainersPayload(payload){
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload.trainers)) return payload.trainers;
+      if (payload && Array.isArray(payload.data)) return payload.data;
+      return [];
+    }
+
+    function normalizeBookingsPayload(payload){
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload.bookings)) return payload.bookings;
+      if (payload && Array.isArray(payload.data)) return payload.data;
+      return [];
+    }
+
+    function formatMaybeDate(value){
+      if (!value) return '';
+      const s = String(value);
+      // If API already provides formatted text, keep it.
+      // If it's ISO-ish, present a compact readable date/time.
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+      }
+      return s;
+    }
+
+    function classCard(c){
+      const name = c.name ?? c.title ?? c.class_name ?? 'Class';
+      const desc = c.description ?? c.details ?? c.summary ?? '';
+      const trainer = c.trainer_name ?? c.trainer ?? c.coach ?? '';
+      const when = c.datetime ?? c.start_time ?? c.time ?? c.date ?? '';
+      const duration = c.duration ?? c.duration_min ?? '';
+      const level = c.level ?? c.intensity ?? '';
+      const status = c.status ?? '';
+
+      const pills = [];
+      if (when) pills.push(`<span class="pill">${escapeHtml(formatMaybeDate(when))}</span>`);
+      if (duration) pills.push(`<span class="pill">${escapeHtml(String(duration))}${String(duration).match(/[a-z]/i) ? '' : ' min'}</span>`);
+      if (trainer) pills.push(`<span class="pill">Trainer: ${escapeHtml(trainer)}</span>`);
+      if (level) pills.push(`<span class="pill">${escapeHtml(level)}</span>`);
+      if (status) pills.push(`<span class="pill">${escapeHtml(status)}</span>`);
+
+      return `
+        <div class="card" role="listitem">
+          <h3>${escapeHtml(name)}</h3>
+          <p>${escapeHtml(desc || 'A focused session designed to build strength, stamina, and confidence.')}</p>
+          ${pills.length ? `<div class="meta">${pills.join('')}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function trainerCard(t){
+      const name = t.name ?? t.full_name ?? 'Trainer';
+      const bio = t.bio ?? t.description ?? t.about ?? '';
+      const specialties = t.specialties ?? t.speciality ?? t.skills ?? t.focus ?? [];
+      const availability = t.availability ?? t.available ?? t.hours ?? '';
+
+      const pills = [];
+      if (Array.isArray(specialties) && specialties.length){
+        specialties.slice(0,4).forEach(s => pills.push(`<span class="pill">${escapeHtml(s)}</span>`));
+      } else if (typeof specialties === 'string' && specialties.trim()){
+        specialties.split(',').slice(0,4).forEach(s => pills.push(`<span class="pill">${escapeHtml(s.trim())}</span>`));
+      }
+      if (availability) pills.push(`<span class="pill">Availability: ${escapeHtml(String(availability))}</span>`);
+
+      return `
+        <div class="card" role="listitem">
+          <h3>${escapeHtml(name)}</h3>
+          <p>${escapeHtml(bio || 'Specialized coaching with a focus on safe technique and consistent progress.')}</p>
+          ${pills.length ? `<div class="meta">${pills.join('')}</div>` : ''}
+        </div>
+      `;
+    }
+
+    function statusClass(s){
+      const v = String(s ?? '').toLowerCase().trim();
+      if (!v) return 'new';
+      if (v === 'in progress' || v === 'in_progress' || v === 'in-progress') return 'inprogress';
+      return v.replace(/\s+/g,'');
+    }
+
+    function bookingRow(b){
+      const member = b.member_name ?? b.name ?? 'Member';
+      const email = b.email ?? '';
+      const classId = b.class_id ?? b.class ?? b.class_name ?? '';
+      const created = b.created_at ?? b.created ?? b.timestamp ?? '';
+      const status = b.status ?? 'new';
+
+      const classLabel = (typeof classId === 'object' && classId !== null)
+        ? (classId.name ?? classId.title ?? classId.id ?? 'Class')
+        : classId;
+
+      return `
+        <div class="row">
+          <div class="main">
+            <strong>${escapeHtml(member)}</strong>
+            <span>${escapeHtml(email || 'No email provided')}</span>
+          </div>
+          <div class="main">
+            <strong>${escapeHtml(String(classLabel || 'Class request'))}</strong>
+            <span>${escapeHtml(created ? formatMaybeDate(created) : ''))}</span>
+          </div>
+          <div class="main">
+            <strong>Notes</strong>
+            <span>${escapeHtml((b.notes ?? b.message ?? '').toString() || '—')}</span>
+          </div>
+          <div class="status ${escapeHtml(statusClass(status))}">${escapeHtml(status)}</div>
+        </div>
+      `;
+    }
+
+    async function fetchJson(url, options){
+      const res = await fetch(url, options);
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+      if (!res.ok){
+        const msg = (data && (data.error || data.message)) ? (data.error || data.message) : (typeof data === 'string' && data ? data : `Request failed (${res.status})`);
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    let cachedClasses = [];
+
+    async function loadClasses(){
+      const stateEl = $('#classesState');
+      const gridEl = $('#classesGrid');
+      const selectEl = $('#class_id');
+
+      setState(stateEl, {loading: true, title: 'Loading classes…', subtitle: 'Fetching the latest schedule.'});
+      gridEl.innerHTML = '';
+      selectEl.innerHTML = '<option value="">Loading class options…</option>';
+
+      try{
+        const payload = await fetchJson('/classes');
+        const classes = normalizeClassesPayload(payload);
+        cachedClasses = classes;
+
+        if (!classes.length){
+          setState(stateEl, {loading: false, type: 'ok', title: 'No classes posted yet', subtitle: 'Check back soon or send an enquiry.'});
+          gridEl.innerHTML = '';
+          selectEl.innerHTML = '<option value="">No classes available</option>';
+          return;
+        }
+
+        stateEl.hidden = true;
+
+        // Cards
+        gridEl.innerHTML = classes.map(classCard).join('');
+
+        // Select options
+        const opts = ['<option value="">Select a class</option>'];
+        classes.forEach((c, idx) => {
+          const id = c.id ?? c.class_id ?? c.uuid ?? c._id ?? String(idx + 1);
+          const name = c.name ?? c.title ?? c
