@@ -18,18 +18,20 @@ The system provides a public-facing gym website and a Flask API for managing fit
 - Dockerfile for containerized deployment
 
 ## Project Structure
-
-flask/
+deploy_app/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── static/
+├── templates/
+├── tests/
+├── .gitignore
 ├── app.py
-├── requirements.txt
 ├── Dockerfile
 ├── README.md
-├── static/
-│   └── gym_hero.png
-├── templates/
-│   └── index.html
-└── tests/
-    └── test_app.py
+├── requirements.txt
+└── TESTING.md
+
 
 ## Run Locally
 
@@ -86,3 +88,16 @@ http://127.0.0.1:5000/
 This application uses in-memory Python lists for demonstration purposes. Data will reset when the application restarts.
 
 The project was generated as part of a meta-software development workflow, where a Jupyter Notebook is used to generate software artefacts including documentation, UML diagrams, Flask API code, a website, tests, and deployment files.
+
+
+## Task 2 Workflow Summary
+
+This folder contains the deployment version of the Flask API and website generated from Task 1.
+
+It is used to demonstrate Git version control, automated testing, GitHub Actions workflow, and later public deployment.
+
+The GitHub Actions workflow is stored in `.github/workflows/ci.yml`. When code is pushed to GitHub, it automatically installs the required packages and runs the tests.
+
+The testing guide is stored in `TESTING.md`, and the actual test code is stored in `tests/test_app.py`.
+
+The app is prepared for public deployment. After deployment is completed, the public website screenshot will be saved in the `Task2/screenshots` folder.
