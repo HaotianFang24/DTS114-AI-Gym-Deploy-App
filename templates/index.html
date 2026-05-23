@@ -36,6 +36,10 @@
     html { scroll-behavior: smooth; }
     * { box-sizing: border-box; }
 
+    [hidden] {
+    display: none !important;
+    }
+
     body{
       margin: 0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
@@ -731,199 +735,296 @@
   </footer>
 
   <script>
-    const $ = (sel) => document.querySelector(sel);
+  const $ = (selector) => document.querySelector(selector);
 
-    function escapeHtml(value){
-      const s = String(value ?? "");
-      return s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    }
+  function escapeHtml(value) {
+    const s = String(value ?? "");
+    return s.replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[c]));
+  }
 
-    function setState(el, {loading, title, subtitle, type}){
-      if (!el) return;
-      const spinner = loading ? '<div class="spinner" aria-hidden="true"></div>' : '';
-      const border = type === 'error'
-        ? 'border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08);'
-        : type === 'ok'
-          ? 'border-color: rgba(34,197,94,0.30); background: rgba(34,197,94,0.08);'
-          : '';
-      el.style.cssText = border;
-      el.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px;">
-          ${spinner}
-          <div>
-            <div style="font-weight:600;">${escapeHtml(title || '')}</div>
-            ${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ''}
-          </div>
+  function showState(el, title, subtitle = "", type = "loading") {
+    if (!el) return;
+
+    const showSpinner = type === "loading";
+    el.hidden = false;
+    el.innerHTML = `
+      <div style="display:flex; align-items:center; gap:10px;">
+        ${showSpinner ? '<div class="spinner" aria-hidden="true"></div>' : ""}
+        <div>
+          <div style="font-weight:600;">${escapeHtml(title)}</div>
+          ${subtitle ? `<small>${escapeHtml(subtitle)}</small>` : ""}
         </div>
-      `;
-      el.hidden = false;
+      </div>
+    `;
+  }
+
+  function showMessage(el, type, text) {
+    if (!el) return;
+    el.className = "msg show " + (type === "ok" ? "ok" : "err");
+    el.textContent = text;
+  }
+
+  async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    const text = await response.text();
+
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = text;
     }
 
-    function showMsg(el, type, text){
-      el.className = 'msg show ' + (type === 'ok' ? 'ok' : (type === 'err' ? 'err' : ''));
-      el.textContent = text;
+    if (!response.ok) {
+      const message = data && data.error ? data.error : `Request failed: ${response.status}`;
+      throw new Error(message);
     }
 
-    function normalizeClassesPayload(payload){
-      if (Array.isArray(payload)) return payload;
-      if (payload && Array.isArray(payload.classes)) return payload.classes;
-      if (payload && Array.isArray(payload.data)) return payload.data;
-      return [];
-    }
+    return data;
+  }
 
-    function normalizeTrainersPayload(payload){
-      if (Array.isArray(payload)) return payload;
-      if (payload && Array.isArray(payload.trainers)) return payload.trainers;
-      if (payload && Array.isArray(payload.data)) return payload.data;
-      return [];
-    }
+  function formatClassTime(c) {
+    const date = c.date || "";
+    const start = c.start_time || "";
+    const end = c.end_time || "";
 
-    function normalizeBookingsPayload(payload){
-      if (Array.isArray(payload)) return payload;
-      if (payload && Array.isArray(payload.bookings)) return payload.bookings;
-      if (payload && Array.isArray(payload.data)) return payload.data;
-      return [];
-    }
+    if (date && start && end) return `${date}, ${start}–${end}`;
+    if (date && start) return `${date}, ${start}`;
+    if (date) return date;
+    return "Time TBC";
+  }
 
-    function formatMaybeDate(value){
-      if (!value) return '';
-      const s = String(value);
-      // If API already provides formatted text, keep it.
-      // If it's ISO-ish, present a compact readable date/time.
-      const d = new Date(s);
-      if (!isNaN(d.getTime())) {
-        return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+  function classCard(c) {
+    return `
+      <div class="card" role="listitem">
+        <h3>${escapeHtml(c.name || "Class")}</h3>
+        <p>${escapeHtml(c.description || "A scheduled gym class.")}</p>
+        <div class="meta">
+          <span class="pill">${escapeHtml(formatClassTime(c))}</span>
+          <span class="pill">Trainer: ${escapeHtml(c.trainer_name || "TBC")}</span>
+          <span class="pill">Location: ${escapeHtml(c.location || "Gym")}</span>
+          <span class="pill">Capacity: ${escapeHtml(c.capacity || "TBC")}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function trainerCard(t) {
+    const specialties = Array.isArray(t.specialties)
+      ? t.specialties
+      : String(t.specialties || "").split(",").map(s => s.trim()).filter(Boolean);
+
+    return `
+      <div class="card" role="listitem">
+        <h3>${escapeHtml(t.name || "Trainer")}</h3>
+        <p>${escapeHtml(t.bio || "Professional gym trainer.")}</p>
+        <div class="meta">
+          ${specialties.slice(0, 4).map(s => `<span class="pill">${escapeHtml(s)}</span>`).join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function bookingRow(b) {
+    const status = String(b.status || "new").toLowerCase();
+    const statusClass = status.replace(/\s+/g, "");
+
+    return `
+      <div class="row">
+        <div class="main">
+          <strong>${escapeHtml(b.member_name || "Member")}</strong>
+          <span>${escapeHtml(b.email || "No email")}</span>
+        </div>
+        <div class="main">
+          <strong>${escapeHtml(b.class_name || b.class_id || "Class request")}</strong>
+          <span>${escapeHtml(b.created_at || "")}</span>
+        </div>
+        <div class="main">
+          <strong>Notes</strong>
+          <span>${escapeHtml(b.notes || "—")}</span>
+        </div>
+        <div class="status ${escapeHtml(statusClass)}">${escapeHtml(status)}</div>
+      </div>
+    `;
+  }
+
+  async function loadClasses() {
+    const stateEl = $("#classesState");
+    const gridEl = $("#classesGrid");
+    const selectEl = $("#class_id");
+
+    showState(stateEl, "Loading classes...", "Fetching the latest schedule.");
+    if (gridEl) gridEl.innerHTML = "";
+    if (selectEl) selectEl.innerHTML = '<option value="">Loading class options...</option>';
+
+    try {
+      const classes = await fetchJson("/classes");
+
+      if (!Array.isArray(classes) || classes.length === 0) {
+        showState(stateEl, "No classes available", "Please check again later.", "ok");
+        if (selectEl) selectEl.innerHTML = '<option value="">No classes available</option>';
+        return;
       }
-      return s;
-    }
 
-    function classCard(c){
-      const name = c.name ?? c.title ?? c.class_name ?? 'Class';
-      const desc = c.description ?? c.details ?? c.summary ?? '';
-      const trainer = c.trainer_name ?? c.trainer ?? c.coach ?? '';
-      const when = c.datetime ?? c.start_time ?? c.time ?? c.date ?? '';
-      const duration = c.duration ?? c.duration_min ?? '';
-      const level = c.level ?? c.intensity ?? '';
-      const status = c.status ?? '';
+      if (stateEl) stateEl.hidden = true;
+      if (gridEl) gridEl.innerHTML = classes.map(classCard).join("");
 
-      const pills = [];
-      if (when) pills.push(`<span class="pill">${escapeHtml(formatMaybeDate(when))}</span>`);
-      if (duration) pills.push(`<span class="pill">${escapeHtml(String(duration))}${String(duration).match(/[a-z]/i) ? '' : ' min'}</span>`);
-      if (trainer) pills.push(`<span class="pill">Trainer: ${escapeHtml(trainer)}</span>`);
-      if (level) pills.push(`<span class="pill">${escapeHtml(level)}</span>`);
-      if (status) pills.push(`<span class="pill">${escapeHtml(status)}</span>`);
-
-      return `
-        <div class="card" role="listitem">
-          <h3>${escapeHtml(name)}</h3>
-          <p>${escapeHtml(desc || 'A focused session designed to build strength, stamina, and confidence.')}</p>
-          ${pills.length ? `<div class="meta">${pills.join('')}</div>` : ''}
-        </div>
-      `;
-    }
-
-    function trainerCard(t){
-      const name = t.name ?? t.full_name ?? 'Trainer';
-      const bio = t.bio ?? t.description ?? t.about ?? '';
-      const specialties = t.specialties ?? t.speciality ?? t.skills ?? t.focus ?? [];
-      const availability = t.availability ?? t.available ?? t.hours ?? '';
-
-      const pills = [];
-      if (Array.isArray(specialties) && specialties.length){
-        specialties.slice(0,4).forEach(s => pills.push(`<span class="pill">${escapeHtml(s)}</span>`));
-      } else if (typeof specialties === 'string' && specialties.trim()){
-        specialties.split(',').slice(0,4).forEach(s => pills.push(`<span class="pill">${escapeHtml(s.trim())}</span>`));
+      if (selectEl) {
+        selectEl.innerHTML = '<option value="">Select a class</option>' +
+          classes.map(c => `
+            <option value="${escapeHtml(c.id)}">
+              ${escapeHtml(c.name)} - ${escapeHtml(c.date || "")} ${escapeHtml(c.start_time || "")}
+            </option>
+          `).join("");
       }
-      if (availability) pills.push(`<span class="pill">Availability: ${escapeHtml(String(availability))}</span>`);
-
-      return `
-        <div class="card" role="listitem">
-          <h3>${escapeHtml(name)}</h3>
-          <p>${escapeHtml(bio || 'Specialized coaching with a focus on safe technique and consistent progress.')}</p>
-          ${pills.length ? `<div class="meta">${pills.join('')}</div>` : ''}
-        </div>
-      `;
+    } catch (error) {
+      showState(stateEl, "Could not load classes", error.message, "error");
     }
+  }
 
-    function statusClass(s){
-      const v = String(s ?? '').toLowerCase().trim();
-      if (!v) return 'new';
-      if (v === 'in progress' || v === 'in_progress' || v === 'in-progress') return 'inprogress';
-      return v.replace(/\s+/g,'');
-    }
+  async function loadTrainers() {
+    const stateEl = $("#trainersState");
+    const gridEl = $("#trainersGrid");
 
-    function bookingRow(b){
-      const member = b.member_name ?? b.name ?? 'Member';
-      const email = b.email ?? '';
-      const classId = b.class_id ?? b.class ?? b.class_name ?? '';
-      const created = b.created_at ?? b.created ?? b.timestamp ?? '';
-      const status = b.status ?? 'new';
+    showState(stateEl, "Loading trainers...", "Profiles and availability.");
+    if (gridEl) gridEl.innerHTML = "";
 
-      const classLabel = (typeof classId === 'object' && classId !== null)
-        ? (classId.name ?? classId.title ?? classId.id ?? 'Class')
-        : classId;
+    try {
+      const trainers = await fetchJson("/trainers");
 
-      return `
-        <div class="row">
-          <div class="main">
-            <strong>${escapeHtml(member)}</strong>
-            <span>${escapeHtml(email || 'No email provided')}</span>
-          </div>
-          <div class="main">
-            <strong>${escapeHtml(String(classLabel || 'Class request'))}</strong>
-            <span>${escapeHtml(created ? formatMaybeDate(created) : ''))}</span>
-          </div>
-          <div class="main">
-            <strong>Notes</strong>
-            <span>${escapeHtml((b.notes ?? b.message ?? '').toString() || '—')}</span>
-          </div>
-          <div class="status ${escapeHtml(statusClass(status))}">${escapeHtml(status)}</div>
-        </div>
-      `;
-    }
-
-    async function fetchJson(url, options){
-      const res = await fetch(url, options);
-      const text = await res.text();
-      let data = null;
-      try { data = text ? JSON.parse(text) : null; } catch { data = text; }
-      if (!res.ok){
-        const msg = (data && (data.error || data.message)) ? (data.error || data.message) : (typeof data === 'string' && data ? data : `Request failed (${res.status})`);
-        throw new Error(msg);
+      if (!Array.isArray(trainers) || trainers.length === 0) {
+        showState(stateEl, "No trainers available", "Please check again later.", "ok");
+        return;
       }
-      return data;
+
+      if (stateEl) stateEl.hidden = true;
+      if (gridEl) gridEl.innerHTML = trainers.map(trainerCard).join("");
+    } catch (error) {
+      showState(stateEl, "Could not load trainers", error.message, "error");
+    }
+  }
+
+  async function loadBookings() {
+    const stateEl = $("#bookingsState");
+    const tableEl = $("#bookingsTable");
+
+    showState(stateEl, "Loading booking requests...", "Latest requests and status updates.");
+    if (tableEl) tableEl.innerHTML = "";
+
+    try {
+      const bookings = await fetchJson("/bookings");
+
+      if (!Array.isArray(bookings) || bookings.length === 0) {
+        showState(stateEl, "No booking requests yet", "New requests will appear here.", "ok");
+        return;
+      }
+
+      if (stateEl) stateEl.hidden = true;
+      if (tableEl) tableEl.innerHTML = bookings.map(bookingRow).join("");
+    } catch (error) {
+      showState(stateEl, "Could not load booking requests", error.message, "error");
+    }
+  }
+
+  function setupBookingForm() {
+    const form = $("#bookingForm");
+    const msg = $("#bookingMsg");
+
+    if (!form) return;
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const consent = $("#booking_consent");
+      if (consent && !consent.checked) {
+        showMessage(msg, "err", "Please confirm consent before submitting.");
+        return;
+      }
+
+      const payload = {
+        member_name: $("#member_name")?.value.trim(),
+        email: $("#booking_email")?.value.trim(),
+        class_id: $("#class_id")?.value,
+        notes: $("#booking_notes")?.value.trim() || "No additional notes."
+      };
+
+      try {
+        await fetchJson("/bookings", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+
+        showMessage(msg, "ok", "Booking request submitted successfully.");
+        form.reset();
+        await loadBookings();
+      } catch (error) {
+        showMessage(msg, "err", error.message);
+      }
+    });
+  }
+
+  function setupEnquiryForm() {
+    const form = $("#enquiryForm");
+    const msg = $("#enqMsg");
+
+    if (!form) return;
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const consent = $("#enq_consent");
+      if (consent && !consent.checked) {
+        showMessage(msg, "err", "Please confirm consent before submitting.");
+        return;
+      }
+
+      const payload = {
+        name: $("#enq_name")?.value.trim(),
+        email: $("#enq_email")?.value.trim(),
+        subject: $("#enq_subject")?.value.trim(),
+        message: $("#enq_message")?.value.trim()
+      };
+
+      try {
+        await fetchJson("/enquiries", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+
+        showMessage(msg, "ok", "Enquiry submitted successfully.");
+        form.reset();
+      } catch (error) {
+        showMessage(msg, "err", error.message);
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const year = $("#year");
+    if (year) year.textContent = new Date().getFullYear();
+
+    setupBookingForm();
+    setupEnquiryForm();
+
+    const refreshBtn = $("#refreshBookings");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", loadBookings);
     }
 
-    let cachedClasses = [];
-
-    async function loadClasses(){
-      const stateEl = $('#classesState');
-      const gridEl = $('#classesGrid');
-      const selectEl = $('#class_id');
-
-      setState(stateEl, {loading: true, title: 'Loading classes…', subtitle: 'Fetching the latest schedule.'});
-      gridEl.innerHTML = '';
-      selectEl.innerHTML = '<option value="">Loading class options…</option>';
-
-      try{
-        const payload = await fetchJson('/classes');
-        const classes = normalizeClassesPayload(payload);
-        cachedClasses = classes;
-
-        if (!classes.length){
-          setState(stateEl, {loading: false, type: 'ok', title: 'No classes posted yet', subtitle: 'Check back soon or send an enquiry.'});
-          gridEl.innerHTML = '';
-          selectEl.innerHTML = '<option value="">No classes available</option>';
-          return;
-        }
-
-        stateEl.hidden = true;
-
-        // Cards
-        gridEl.innerHTML = classes.map(classCard).join('');
-
-        // Select options
-        const opts = ['<option value="">Select a class</option>'];
-        classes.forEach((c, idx) => {
-          const id = c.id ?? c.class_id ?? c.uuid ?? c._id ?? String(idx + 1);
-          const name = c.name ?? c.title ?? c
+    await Promise.all([
+      loadClasses(),
+      loadTrainers(),
+      loadBookings()
+    ]);
+  });
+</script>
+</body>
+</html>
